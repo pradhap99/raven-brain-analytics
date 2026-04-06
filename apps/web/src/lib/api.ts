@@ -30,16 +30,19 @@ export async function uploadFile(
   objectKey: string,
   onProgress?: (pct: number) => void,
 ): Promise<void> {
-  const url = uploadUrl
-  if (url.startsWith('/')) {
-    await api.post(url, file, {
-      headers: { 'Content-Type': file.type },
+  if (uploadUrl.startsWith('/')) {
+    // Local dev: use multipart form upload
+    const formData = new FormData()
+    formData.append('file', file)
+    await api.post(uploadUrl, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
       onUploadProgress: (e) => {
         if (onProgress && e.total) onProgress(Math.round((e.loaded * 100) / e.total))
       },
     })
   } else {
-    await axios.put(url, file, {
+    // S3 presigned URL: PUT raw file
+    await axios.put(uploadUrl, file, {
       headers: { 'Content-Type': file.type },
       onUploadProgress: (e) => {
         if (onProgress && e.total) onProgress(Math.round((e.loaded * 100) / e.total))
