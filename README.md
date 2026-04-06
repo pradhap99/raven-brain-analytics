@@ -131,11 +131,75 @@ All options are set via environment variables. See [`.env.example`](.env.example
 
 ## Integrating the Real Model
 
-1. Set `MOCK_INFERENCE=false` in your `.env`.
-2. Implement `workers/inference/runner.py::process_job()`.  
-   The function receives `job_id`, `object_key`, `filename`, `size_bytes`, and optional `sections_config`.  
-   Return a fully populated `AnalysisResult` (see `packages/types/schema.py`).
-3. Port your Tribe V2 notebook logic into that function.
+### Overview
+
+When `MOCK_INFERENCE=false` the API calls `workers/inference/runner.py`, which:
+
+1. Resolves the uploaded video from local storage (or S3).
+2. Extracts metadata (duration, fps, resolution) via OpenCV.
+3. Splits the video into 1-second segments and samples 8 frames per segment.
+4. Runs each segment through the **CLIP ViT-B/32** visual backbone (HuggingFace `openai/clip-vit-base-patch32`).
+5. Applies the **Tribe V2 regression head** — a `Linear(hidden_dim, 1)` layer fine-tuned on Meta's fMRI engagement dataset — to produce per-segment activation scores.
+6. Normalises scores to [0, 1], builds the timeline, section rankings, and data-driven insights.
+7. Returns a fully populated `AnalysisResult`.
+
+Without model weights (`TRIBE_WEIGHTS_PATH` left empty), the runner operates in **backbone-only proxy mode**: CLIP feature magnitudes are used as a visual-richness proxy for engagement. This produces non-trivial, content-sensitive results and lets the full pipeline run without a GPU or weights file.
+
+### Install ML dependencies
+
+```bash
+# CPU-only (works everywhere, ~2–10s per video on a modern CPU)
+pip install -r workers/inference/requirements.txt
+
+# GPU (CUDA 12.1) — replace with the wheel matching your driver
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+pip install -r workers/inference/requirements.txt
+```
+
+The CLIP backbone weights (~350 MB) download automatically from HuggingFace on first run and are cached at `~/.cache/huggingface/`.
+
+### Obtain Tribe V2 model weights
+
+The Tribe V2 regression head is a `.pt` checkpoint with the following structure:
+
+```python
+torch.save({
+    "head": head.state_dict(),        # required — nn.Linear(hidden_dim, 1)
+    "encoder": encoder.state_dict(),  # optional — fine-tuned CLIP encoder
+    "backbone_id": "openai/clip-vit-base-patch32",
+    "version": "2.0.0",
+}, "tribe_v2.pt")
+```
+
+Once you have the checkpoint:
+
+```bash
+# In your .env
+TRIBE_WEIGHTS_PATH=/path/to/tribe_v2.pt
+MOCK_INFERENCE=false
+TRIBE_DEVICE=auto   # auto-selects CUDA → MPS → CPU
+```
+
+### GPU requirements
+
+| Mode | Minimum VRAM | Typical latency (15s reel) |
+|------|-------------|---------------------------|
+| CPU (backbone proxy) | N/A | ~15–45s |
+| CPU (with weights) | N/A | ~15–45s |
+| CUDA GPU (16-bit) | 4 GB | ~3–8s |
+| CUDA GPU (32-bit) | 8 GB | ~5–12s |
+
+For batch production use, set `TRIBE_FRAMES_PER_SEG=4` to halve memory usage with minimal accuracy loss.
+
+### Run the smoke test
+
+```bash
+# Synthetic 5-second video (no file needed):
+PYTHONPATH=. MOCK_INFERENCE=false python workers/inference/tests/test_runner.py
+
+# Real video file:
+PYTHONPATH=. MOCK_INFERENCE=false python workers/inference/tests/test_runner.py /path/to/reel.mp4
+```
 
 ---
 
@@ -152,7 +216,7 @@ All options are set via environment variables. See [`.env.example`](.env.example
 
 ## Tech Stack
 
-- **Frontend**: Next.js 14, React 18, Tailwind CSS, Recharts
+- **Frontend**: Next.js 15, React 19, Tailwind CSS, Recharts
 - **Backend**: FastAPI, Pydantic v2, Uvicorn
 - **Worker**: Python asyncio (pluggable queue: in-memory → Redis → SQS)
 - **Storage**: Local filesystem → S3 pre-signed URLs

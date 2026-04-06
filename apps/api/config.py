@@ -32,5 +32,18 @@ class Settings:
     mock_inference: bool = os.getenv("MOCK_INFERENCE", "true").lower() == "true"
     inference_worker_url: str = os.getenv("INFERENCE_WORKER_URL", "")
 
+    # Tribe V2 model
+    # Path to a .pt checkpoint produced by the Tribe V2 training script.
+    # Leave empty to run in backbone-only proxy mode (no GPU / no weights needed).
+    tribe_weights_path: str = os.getenv("TRIBE_WEIGHTS_PATH", "")
+    # Device: "auto" picks CUDA -> MPS -> CPU automatically.
+    tribe_device: str = os.getenv("TRIBE_DEVICE", "auto")
+    # HuggingFace model ID for the CLIP visual backbone.
+    tribe_backbone: str = os.getenv("TRIBE_BACKBONE", "openai/clip-vit-base-patch32")
+    # Duration of each video segment fed to the model (seconds).
+    tribe_segment_duration: float = float(os.getenv("TRIBE_SEGMENT_DURATION", "1.0"))
+    # Number of frames uniformly sampled from each segment.
+    tribe_frames_per_segment: int = int(os.getenv("TRIBE_FRAMES_PER_SEG", "8"))
+
 
 settings = Settings()
