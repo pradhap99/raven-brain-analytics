@@ -1,0 +1,9 @@
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0
+pydantic>=2.7.0
+python-multipart>=0.0.9
+aiofiles>=23.2.1
+# Optional — install when using S3 storage
+# boto3>=1.34.0
+# Optional — install when using Redis queue
+# aioredis>=2.0.1
