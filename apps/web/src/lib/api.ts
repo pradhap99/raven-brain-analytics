@@ -25,10 +25,12 @@ export async function signUpload(
 }
 
 export async function uploadFile(
-  url: string,
   file: File,
+  uploadUrl: string,
+  objectKey: string,
   onProgress?: (pct: number) => void,
 ): Promise<void> {
+  const url = uploadUrl
   if (url.startsWith('/')) {
     await api.post(url, file, {
       headers: { 'Content-Type': file.type },
