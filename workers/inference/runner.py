@@ -303,7 +303,7 @@ async def process_job(
     )
 
 
-def _run_inference(video_path: str):
+def _run_inference(video_path: str) -> tuple[np.ndarray, dict]:
     """
     Synchronous inference work — called inside a thread pool executor.
 
