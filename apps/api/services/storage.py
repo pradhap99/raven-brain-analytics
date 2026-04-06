@@ -37,9 +37,9 @@ def get_upload_url(filename: str, content_type: str, size_bytes: int) -> tuple[s
             ExpiresIn=900,
         )
     else:
-        # Local: return a placeholder URL; the actual upload goes through POST /v1/uploads/local
+        # Local: return a relative path; the actual upload goes through POST /v1/uploads/local
         os.makedirs(settings.local_upload_dir, exist_ok=True)
-                upload_url = f"/v1/uploads/local/{object_key}"
+        upload_url = f"/v1/uploads/local/{object_key}"
 
     return upload_url, object_key
 
