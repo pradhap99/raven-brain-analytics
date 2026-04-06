@@ -1,0 +1,27 @@
+version: "3.9"
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - MOCK_INFERENCE=true
+      - STORAGE_BACKEND=local
+      - QUEUE_BACKEND=memory
+      - CORS_ORIGINS=http://localhost:3000
+    volumes:
+      - /tmp/raven_uploads:/tmp/raven_uploads
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    depends_on:
+      - api
