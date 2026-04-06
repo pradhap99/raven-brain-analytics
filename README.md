@@ -11,9 +11,16 @@ Upload a video → async analysis job → rich results dashboard.
 raven-brain-analytics/
 ├── apps/
 │   ├── api/          # FastAPI backend
-│   └── web/          # Next.js 14 frontend
+│   └── web/          # Next.js 15 frontend
 ├── workers/
-│   └── inference/    # Python async worker (mock + real placeholder)
+│   └── inference/    # Python async worker
+│       ├── adapter.py      # InferenceAdapter ABC + TribeV2Adapter
+│       ├── artifacts.py    # Timeline PNG / summary JSON / thumbnail strip
+│       ├── mock_runner.py  # Deterministic mock (MOCK_INFERENCE=true)
+│       ├── runner.py       # Real inference pipeline (MOCK_INFERENCE=false)
+│       ├── tribe_model.py  # CLIP backbone + Tribe V2 regression head
+│       ├── validation.py   # Video file / upload validation
+│       └── video_utils.py  # OpenCV frame extraction
 ├── packages/
 │   └── types/        # Shared Pydantic + TypeScript schemas
 ├── docker-compose.yml
@@ -126,6 +133,12 @@ All options are set via environment variables. See [`.env.example`](.env.example
 | `QUEUE_BACKEND` | `memory` | `memory`, `redis`, or `sqs` |
 | `CORS_ORIGINS` | `http://localhost:3000` | Comma-separated allowed origins |
 | `NEXT_PUBLIC_API_URL` | `http://localhost:8000` | API base URL for the web app |
+| `ARTIFACTS_DIR` | `/tmp/raven_artifacts` | Directory for per-job artifact files |
+| `ARTIFACTS_BASE_URL` | `http://localhost:8000/v1/artifacts` | URL prefix for artifact download links |
+| `VIDEO_MAX_SIZE_MB` | `500` | Upload size limit in MB |
+| `VIDEO_MAX_DURATION_S` | `300` | Video duration limit in seconds |
+| `VIDEO_ALLOWED_MIME_TYPES` | `video/mp4,...` | Comma-separated accepted MIME types |
+| `INFERENCE_ADAPTER` | _(empty)_ | Optional fully-qualified `InferenceAdapter` class name |
 
 ---
 
@@ -199,6 +212,141 @@ PYTHONPATH=. MOCK_INFERENCE=false python workers/inference/tests/test_runner.py
 
 # Real video file:
 PYTHONPATH=. MOCK_INFERENCE=false python workers/inference/tests/test_runner.py /path/to/reel.mp4
+```
+
+---
+
+## Local Real Inference Run (step-by-step walkthrough)
+
+This section shows how to run the full pipeline end-to-end on your local machine
+without Docker, including artifact generation.
+
+### Prerequisites
+
+```bash
+# 1. Install API + ML dependencies
+pip install -r apps/api/requirements.txt
+pip install -r workers/inference/requirements.txt
+```
+
+> **GPU users:** replace the `torch` install with the CUDA-matched wheel first:
+> ```bash
+> pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+> ```
+
+### Step 1 — Configure
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env`:
+
+```dotenv
+MOCK_INFERENCE=false
+TRIBE_WEIGHTS_PATH=            # leave empty for backbone-only proxy mode
+TRIBE_DEVICE=auto              # or "cuda" / "cpu" / "mps"
+ARTIFACTS_DIR=/tmp/raven_artifacts
+ARTIFACTS_BASE_URL=http://localhost:8000/v1/artifacts
+VIDEO_MAX_DURATION_S=300
+```
+
+### Step 2 — Start the API
+
+```bash
+# From the repo root (PYTHONPATH=. is required so shared packages are importable)
+PYTHONPATH=. uvicorn apps.api.main:app --reload --port 8000
+```
+
+The API is ready at [http://localhost:8000/docs](http://localhost:8000/docs).
+
+### Step 3 — Upload a video
+
+```bash
+# Get a pre-signed upload URL (also validates MIME type and size)
+curl -s -X POST http://localhost:8000/v1/uploads/sign \
+  -H "Content-Type: application/json" \
+  -d '{"filename":"reel.mp4","content_type":"video/mp4","size_bytes":5000000}' \
+  | tee /tmp/sign_response.json
+
+# Extract the object_key
+OBJECT_KEY=$(jq -r '.object_key' /tmp/sign_response.json)
+
+# Upload via the local endpoint
+curl -s -X POST "http://localhost:8000/v1/uploads/local/${OBJECT_KEY}" \
+  -F "file=@/path/to/your/reel.mp4"
+```
+
+### Step 4 — Submit an analysis job
+
+```bash
+JOB_RESPONSE=$(curl -s -X POST http://localhost:8000/v1/analysis/jobs \
+  -H "Content-Type: application/json" \
+  -d "{\"object_key\":\"${OBJECT_KEY}\",\"filename\":\"reel.mp4\",\"size_bytes\":5000000}")
+
+JOB_ID=$(echo "$JOB_RESPONSE" | jq -r '.job_id')
+echo "Job ID: $JOB_ID"
+```
+
+### Step 5 — Poll until complete
+
+```bash
+while true; do
+  STATUS=$(curl -s "http://localhost:8000/v1/analysis/jobs/${JOB_ID}" | jq -r '.status')
+  echo "Status: $STATUS"
+  [[ "$STATUS" == "completed" || "$STATUS" == "failed" ]] && break
+  sleep 2
+done
+```
+
+### Step 6 — Fetch the result
+
+```bash
+curl -s "http://localhost:8000/v1/analysis/jobs/${JOB_ID}/result" | jq .
+```
+
+The result includes:
+- `summary` — attention score, peak activation, cognitive load, CTA strength
+- `timeline` — per-second activation scores
+- `sections` — ranked section scores (hook, intro, main, CTA)
+- `insights` — primary, weakness, recommendation, and general insights
+- `artifacts` — download URLs for `timeline.png`, `summary.json`, and (if available) `thumbnails.png`
+
+### Step 7 — Download artifacts
+
+```bash
+# Timeline PNG
+curl -o /tmp/timeline.png \
+  "http://localhost:8000/v1/artifacts/${JOB_ID}/timeline.png"
+
+# Summary JSON
+curl -o /tmp/summary.json \
+  "http://localhost:8000/v1/artifacts/${JOB_ID}/summary.json"
+```
+
+### Structured timing log
+
+Every job emits a `job.complete` log line with per-phase timing, e.g.:
+
+```
+INFO  job.complete job_id=... timing={'model_load_ms': 3200.0, 'video_decode_ms': 45.1,
+      'frame_sampling_ms': 1230.4, 'inference_ms': 8450.2, 'serialize_ms': 2.1,
+      'artifact_gen_ms': 310.5, 'total_ms': 13240.3} segments=15 attention=0.6123
+```
+
+### Run the integration tests
+
+```bash
+# Skipped automatically if torch / cv2 / transformers are not installed:
+PYTHONPATH=. pytest workers/inference/tests/test_integration.py -v
+
+# With a real video:
+PYTHONPATH=. REAL_VIDEO=/path/to/reel.mp4 \
+  pytest workers/inference/tests/test_integration.py -v -s
+
+# With GPU weights:
+PYTHONPATH=. TRIBE_WEIGHTS_PATH=/path/to/tribe_v2.pt \
+  pytest workers/inference/tests/test_integration.py -v
 ```
 
 ---

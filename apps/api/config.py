@@ -45,5 +45,24 @@ class Settings:
     # Number of frames uniformly sampled from each segment.
     tribe_frames_per_segment: int = int(os.getenv("TRIBE_FRAMES_PER_SEG", "8"))
 
+    # Result artifacts
+    # Directory where per-job artifact files (PNG, JSON) are written.
+    artifacts_dir: str = os.getenv("ARTIFACTS_DIR", "/tmp/raven_artifacts")
+    # URL prefix used to construct artifact download links.
+    artifacts_base_url: str = os.getenv(
+        "ARTIFACTS_BASE_URL", "http://localhost:8000/v1/artifacts"
+    )
+
+    # Video upload validation
+    # Maximum uploaded file size in megabytes.
+    video_max_size_mb: int = int(os.getenv("VIDEO_MAX_SIZE_MB", "500"))
+    # Maximum allowed video duration in seconds.
+    video_max_duration_s: float = float(os.getenv("VIDEO_MAX_DURATION_S", "300"))
+    # Comma-separated list of accepted MIME types.
+    video_allowed_mime_types: List[str] = os.getenv(
+        "VIDEO_ALLOWED_MIME_TYPES",
+        "video/mp4,video/quicktime,video/x-msvideo,video/webm",
+    ).split(",")
+
 
 settings = Settings()

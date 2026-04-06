@@ -14,3 +14,5 @@ opencv-python-headless>=4.8.0
 Pillow>=10.0.0
 # Numerical
 numpy>=1.24.0
+# Artifact rendering (timeline PNG, thumbnail strip)
+matplotlib>=3.8.0
