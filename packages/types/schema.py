@@ -198,6 +198,11 @@ class JobResponse(BaseModel):
     result_url: Optional[str] = None
     error: Optional[str] = None
 
+class UploadSignRequest(BaseModel):
+    filename: str
+    content_type: str
+    size_bytes: int
+
 
 class UploadSignResponse(BaseModel):
     upload_url: str
