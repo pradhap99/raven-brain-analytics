@@ -21,6 +21,7 @@ from .schema import (
     CreateJobRequest,
     JobResponse,
     UploadSignResponse,
+    UploadSignRequest,
 )
 
 __all__ = [
@@ -46,4 +47,5 @@ __all__ = [
     "CreateJobRequest",
     "JobResponse",
     "UploadSignResponse",
+    "UploadSignRequest",
 ]
