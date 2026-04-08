@@ -35,7 +35,6 @@ export async function uploadFile(
     const formData = new FormData()
     formData.append('file', file)
     await api.post(uploadUrl, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
       onUploadProgress: (e) => {
         if (onProgress && e.total) onProgress(Math.round((e.loaded * 100) / e.total))
       },
