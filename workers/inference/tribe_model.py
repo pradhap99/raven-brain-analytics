@@ -51,8 +51,6 @@ class TribeV2Model:
     if device == "auto":
       if torch.cuda.is_available():
         self._device = "cuda"
-      elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
-        self._device = "mps"
       else:
         self._device = "cpu"
     else:
@@ -67,12 +65,9 @@ class TribeV2Model:
       backbone_id,
       torch_dtype=torch.float32,
     )
-    # Move to target device safely
-    if self._device == "mps":
-      self._encoder = self._encoder.to(torch.device("mps"))
-    elif self._device == "cuda":
-      self._encoder = self._encoder.cuda()
-    # else stays on CPU
+        # Move to target device
+    if self._device != "cpu":
+      self._encoder = self._encoder.to(self._device)
     self._encoder.eval()
     hidden_dim: int = self._encoder.config.hidden_size
 
