@@ -63,7 +63,7 @@ function DropZone({ label, color, state, onFile }: {
   if (state.status === 'done') return (
     <div className={`border-2 ${borderColor} rounded-2xl p-8 text-center bg-white/[0.02]`}>
       <p className={`text-sm font-semibold ${textColor} mb-2`}>{label}</p>
-      <p className="text-green-400 text-2xl mb-1">\u2713</p>
+      <p className="text-green-400 text-2xl mb-1">✓</p>
       <p className="text-xs text-slate-400">{state.file?.name}</p>
       <p className="text-xs text-green-400 mt-1">Analysis complete</p>
     </div>
@@ -83,7 +83,7 @@ function DropZone({ label, color, state, onFile }: {
       className={`border-2 border-dashed ${drag ? borderColor : 'border-white/10'} rounded-2xl p-8 text-center cursor-pointer ${bgHover} transition-all`}
     >
       <input ref={ref} type="file" accept="video/*,image/*,.pdf,.doc,.docx" className="hidden" onChange={(e) => { if (e.target.files?.[0]) onFile(e.target.files[0]) }} />
-      <p className="text-3xl mb-3">{color === 'purple' ? '\uD83C\uDFA5' : '\uD83C\uDFAC'}</p>
+      <p className="text-3xl mb-3">{color === 'purple' ? '🎥' : '🎬'}</p>
       <p className={`text-sm font-semibold ${textColor} mb-1`}>{label}</p>
       <p className="text-xs text-slate-500">Drag & drop or click to browse</p>
       <p className="text-[10px] text-slate-600 mt-2">MP4, MOV, AVI, WebM, Images, PDF</p>
@@ -217,12 +217,12 @@ function CompareContent() {
                 </div>
               </div>
               <section className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                <CompareMetric icon="\uD83C\uDFC6" label="Grade" valA={a.overall_grade || '---'} valB={b.overall_grade || '---'} />
-                <CompareMetric icon="\uD83E\uDDE0" label="Avg Engagement" valA={pct(a.predicted_attention)} valB={pct(b.predicted_attention)} />
-                <CompareMetric icon="\u26A1" label="Peak Activation" valA={pct(a.peak_activation)} valB={pct(b.peak_activation)} />
-                <CompareMetric icon="\uD83D\uDD25" label="Virality" valA={pct(a.virality_score)} valB={pct(b.virality_score)} />
-                <CompareMetric icon="\uD83D\uDD04" label="Retention" valA={pct(safe(a.predicted_retention_pct / 100))} valB={pct(safe(b.predicted_retention_pct / 100))} />
-                <CompareMetric icon="\uD83D\uDCA1" label="CTA Strength" valA={pct(a.cta_strength)} valB={pct(b.cta_strength)} />
+                <CompareMetric icon="🏆" label="Grade" valA={a.overall_grade || '---'} valB={b.overall_grade || '---'} />
+                <CompareMetric icon="🧠" label="Avg Engagement" valA={pct(a.predicted_attention)} valB={pct(b.predicted_attention)} />
+                <CompareMetric icon="⚡" label="Peak Activation" valA={pct(a.peak_activation)} valB={pct(b.peak_activation)} />
+                <CompareMetric icon="🔥" label="Virality" valA={pct(a.virality_score)} valB={pct(b.virality_score)} />
+                <CompareMetric icon="🔄" label="Retention" valA={pct(safe(a.predicted_retention_pct / 100))} valB={pct(safe(b.predicted_retention_pct / 100))} />
+                <CompareMetric icon="💡" label="CTA Strength" valA={pct(a.cta_strength)} valB={pct(b.cta_strength)} />
               </section>
               <section className="bg-[#1a1a2e]/60 border border-white/5 rounded-2xl p-4">
                 <h2 className="text-sm font-semibold mb-3">Winner Summary</h2>
