@@ -174,7 +174,10 @@ def _build_insights(
             )
         )
 
-    trend = float(np.polyfit(np.arange(len(activations)), activations, 1)[0])
+    if len(activations) >= 2:
+        trend = float(np.polyfit(np.arange(len(activations)), activations, 1)[0])
+    else:
+        trend = 0.0
     if trend < -0.005:
         rec = (
             "Engagement declines across the video. "
