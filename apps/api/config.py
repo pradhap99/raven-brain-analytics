@@ -10,7 +10,7 @@ from typing import List
 class Settings:
     # CORS
     cors_origins: List[str] = os.getenv(
-        "CORS_ORIGINS", "http://localhost:3000"
+                "CORS_ORIGINS", "http://localhost:3000,http://localhost:3001"
     ).split(",")
 
     # Storage
