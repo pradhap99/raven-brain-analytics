@@ -29,7 +29,7 @@ class Settings:
     database_url: str = os.getenv("DATABASE_URL", "sqlite:///./raven.db")
 
     # Inference worker
-    mock_inference: bool = os.getenv("MOCK_INFERENCE", "true").lower() == "true"
+    mock_inference: bool = os.getenv("MOCK_INFERENCE", "false").lower() == "true"
     inference_worker_url: str = os.getenv("INFERENCE_WORKER_URL", "")
 
     # Tribe V2 model
