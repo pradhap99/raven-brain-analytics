@@ -10,7 +10,7 @@ from typing import List
 class Settings:
     # CORS
     cors_origins: List[str] = os.getenv(
-                "CORS_ORIGINS", "http://localhost:3000,http://localhost:3001"
+            "CORS_ORIGINS", "http://localhost:3000,http://localhost:3001"
     ).split(",")
 
     # Storage
@@ -53,7 +53,7 @@ class Settings:
         "ARTIFACTS_BASE_URL", "http://localhost:8000/v1/artifacts"
     )
 
-    # Video upload validation
+    # Upload validation
     # Maximum uploaded file size in megabytes.
     video_max_size_mb: int = int(os.getenv("VIDEO_MAX_SIZE_MB", "500"))
     # Maximum allowed video duration in seconds.
@@ -61,8 +61,7 @@ class Settings:
     # Comma-separated list of accepted MIME types.
     video_allowed_mime_types: List[str] = os.getenv(
         "VIDEO_ALLOWED_MIME_TYPES",
-        "video/mp4,video/quicktime,video/x-msvideo,video/webm",
+        "video/mp4,video/quicktime,video/x-msvideo,video/webm,image/jpeg,image/png,image/gif,image/webp,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     ).split(",")
-
 
 settings = Settings()
