@@ -103,12 +103,9 @@ export default function HomePage() {
             <span className="text-xs text-slate-500">·</span>
             <span className="text-xs text-slate-500">Brain region & emotional arc require full Tribe V2</span>
           </div>
-          <a
-            href="#"
-            className="text-xs text-purple-400 hover:text-purple-300 transition-colors"
-          >
-            Upgrade to full Tribe V2 model →
-          </a>
+          <span className="text-xs text-purple-400 cursor-default opacity-60">
+            Upgrade to full Tribe V2 model (coming soon)
+          </span>
         </div>
       </div>
 

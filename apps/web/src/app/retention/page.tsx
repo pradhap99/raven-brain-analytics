@@ -91,7 +91,7 @@ function findDropMarkers(curve: AnalysisResult['retention_curve'], threshold = 1
 
 function retentionRecommendation(marker: DropMarker, idx: number): string {
   const recs = [
-    `At ${marker.second}s, viewers drop off sharply (−${marker.drop.toFixed(0)}%). Add a pattern interrupt — a new visual, text overlay, or hook — to re-engage.`,
+    `At ${marker.second}s, viewers drop off sharply (-${marker.drop.toFixed(0)}%). Add a pattern interrupt - a new visual, text overlay, or hook - to re-engage.`,
     `The ${marker.drop.toFixed(0)}% drop at ${marker.second}s suggests content fatigue. Consider trimming this section or adding energy.`,
     `Retention falls ${marker.drop.toFixed(0)}% at ${marker.second}s. Reposition your strongest moment here to prevent drop-off.`,
   ]
@@ -253,12 +253,12 @@ export default function RetentionPage() {
                     <div key={i} className="flex items-start gap-4 bg-red-500/10 border border-red-500/20 rounded-xl p-4">
                       <div className="shrink-0 text-center">
                         <div className="text-lg font-black text-red-400">{m.second}s</div>
-                        <div className="text-xs text-slate-500">−{m.drop.toFixed(0)}%</div>
+                        <div className="text-xs text-slate-500">-{m.drop.toFixed(0)}%</div>
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-xs text-slate-400">{m.from.toFixed(0)}% → {m.to.toFixed(0)}%</span>
-                          <span className="text-xs font-semibold text-red-400">−{m.drop.toFixed(0)}% drop</span>
+                          <span className="text-xs font-semibold text-red-400">-{m.drop.toFixed(0)}% drop</span>
                         </div>
                         <p className="text-xs text-slate-300">{retentionRecommendation(m, i)}</p>
                       </div>
